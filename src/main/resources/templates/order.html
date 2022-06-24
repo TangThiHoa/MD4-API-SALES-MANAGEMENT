@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <!--    //Sử dụng ajax()cần có thư viện-->
+</head>
+<body>
+<h3>Sales management </h3>
+<button onClick="findAllOrder()">SHOW ALL ORDER LIST</button>
+<button onclick="showAddForm()">ADD NEW ORDER</button>
+
+<div id="display"></div>
+<script>
+    //1.HÀM HIỂN THỊ TẤT CẢ CỦA BẢNG
+    let show = document.getElementById("display");
+
+    function findAllOrder() {
+        $.ajax({                                                                    // $.ajax()là hàm nhỏ của jQuerry // $ : coi như trang html hiện tại
+            type: "GET",
+            url: "http://localhost:8080/orders",
+            success: function (data) {                                              //data là dữ liệu mình gửi sang , nó tự gộp , tự chuyển thành data
+                display(data)
+            }, error: function (error) {
+                console.log(error);
+            }
+        })
+    }
+
+    // 2.HÀM CHUNG CỦA BẢNG  ĐỂ TRÁNH PHẢI VIẾT LẶP LẠI
+    function display(data) {
+        let content = `<tr>
+                        <th>ID</th>
+                        <th>CreateAt</th>
+                        <th>TotalPrice</th>
+                        <th>Customer</th>
+                        <br>
+                    </tr>`;
+        console.log(data)
+        for (let i = 0; i < data.length; i++) {
+            content += getOrder(data[i]);
+        }
+        show.innerHTML = content;
+    }
+
+    // 3.HÀM LẤY DỮ LIỆU TỪ BẢNG
+    function getOrder(order) {
+        return `<tr>
+            <td>${order.id}</td>
+
+            <td>${order.createAt}</td>
+
+            <td>${order.totalPrice}</td>
+
+            <td>${order.customer.name}</td>
+
+            <td><button onclick="showEditForm(${order.id})">Edit</button></td>       <!--//Nhấn nút gọi sự kiện trong onclick => xuống hàm showEditForm -->
+
+            <td><button onclick="deleteOrder(${order.id})">Delete</button></td>    <!--//Nhấn nút gọi sự kiện trong onclick => xuống hàm deleteProduct -->
+            <br>
+        </tr>`
+    }
+
+    // 6.HÀM showEditForm CỦA BẢNG  (Nếu muốn chỉnh sửa phải có hàm này để hiển thị form)
+    let edit = document.getElementById("display")
+
+    function showEditForm(id) {
+        $.ajax({
+            type: 'GET',
+            url: 'http://localhost:8080/orders/' + id,                               //lấy dữ liệu từ bên controller
+            success: function (order) {                                             //order được binding từ controller qua ( id thành đối tượng )
+                console.log("vao day không" + order)
+                let str = `
+                    <input  value="${order.createAt}" id="createAt">
+                <input value="${order.totalPrice}" id="totalPrice">
+                <input value="${order.customer.id}" id="customer">
+
+                <button onclick="update(${order.id})">Edit</button>`                //Sau khi nhấn nút Edit gọi đến sự kiện trong onclick rồi vào hàm update
+
+                edit.innerHTML = str;
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        })
+    }
+
+    //7.HÀM UPDATE CỦA ORDER  (sau khi showFormEdit thì hàm này sẽ thực hiện lưu lại )
+    function update(id) {
+        let createAt = document.getElementById("createAt").value;
+        let totalPrice = document.getElementById("totalPrice").value;
+        let customer = document.getElementById("customer").value;
+        let cus = {
+            createAt: createAt,
+            totalPrice: totalPrice,
+            customer: {
+                id: customer
+            }
+        }
+        console.log(cus)
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: 'PUT',
+            url: 'http://localhost:8080/orders/' + id,
+            data: JSON.stringify(cus),
+            success: function () {
+                console.log("vao day k")
+                findAllOrder()
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        })
+    }
+
+    //4.HÀM showAddForm CỦA BẢNG ORDERS ( nếu muốn thêm mới sản phẩm thì phải có hàm này để hiển thị form )
+    function showAddForm() {
+        let str = "\n" +
+            "<input type=\"datetime-local\" id=\"createAt\"placeholder='enter in createAt'>\n" +
+            "<input type=\"number\" id=\"totalPrice\"placeholder='enter in totalPrice'>\n" +
+            "<input type=\"number\" id=\"customer\"placeholder='enter in quantity'>" +
+            "<button onclick='saveP()'>Add</button>"
+        show.innerHTML = str;
+
+        //5.HÀM SAVE CỦA BẢNG order ( sau khi nhập dữ liệu thì hàm này sẽ thực hiện lưu lại )
+
+
+    }
+
+    function saveP() {
+        let createAt = document.getElementById("createAt").value;
+        let totalPrice = document.getElementById("totalPrice").value;
+        let customer = document.getElementById("customer").value;
+        let cus = {
+            createAt: createAt,
+            totalPrice: totalPrice,
+            customer: {
+                id: customer
+            }
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: 'POST',
+            url: 'http://localhost:8080/orders',
+            data: JSON.stringify(cus),                                    //chuyển kiểu dữ liệu js thành dạng JSON
+            success: function () {
+                findAllOrder()//  thay vì hiển thị thông báo alert("Thành công ") thì ta hiển thị luôn ds
+                alert("Thêm mới thành công !!!")
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        })
+    }
+    //8.HÀM DELETE CỦA PRODUCT (nếu muốn xóa 1 dòng /1 sản phẩm trong product)
+    function deleteOrder(id) {
+        $.ajax({
+            type: "DELETE",
+            url: "http://localhost:8080/orders/" + id,
+            success: function () {
+                findAllOrder()
+                alert("Xóa thành công !!!")//xử lý khi thành công trả về list
+
+            }
+        });
+    }
+
+</script>
+
+</body>
+</html>

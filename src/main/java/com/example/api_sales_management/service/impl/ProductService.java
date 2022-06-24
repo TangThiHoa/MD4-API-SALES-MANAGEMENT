@@ -6,6 +6,7 @@ import com.example.api_sales_management.service.IProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -32,6 +33,11 @@ public class ProductService implements IProductService {
     @Override
     public Iterable<Product> findAllByPriceBetween(int from, int to) {
         return productRepository.findAllByPriceBetween(from,to);
+    }
+
+    @Override
+    public List<Product> findAllByPriceGreaterThan300() {
+        return productRepository.findAllByPriceGreaterThan300();
     }
 
     @Override
